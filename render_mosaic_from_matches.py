@@ -187,13 +187,39 @@ def apply_zoom_to_box_identity_at_1(box, Px, Py, s):
     ya, yb = sorted((y0p, y1p))
     return [int(round(xa)), int(round(ya)), int(round(xb)), int(round(yb))]
     
-def zoom_factor(fi, focus_idx, s0, gamma):# plus gamma tend vers zéro plus le début est accéléré et la fin ralentie
+def zoom_factor(fi, focus_idx, s0, gamma):
     if fi >= focus_idx:
         return 1.0
     if focus_idx <= 0:
         return 1.0
     prog  = fi / float(focus_idx)
     eased = pow(prog, max(1e-6, float(gamma)))
+    return 1.0 + (s0 - 1.0) * (1.0 - eased)
+
+import math
+
+def zoom_factor_S(fi, focus_idx, s0, steepness=2.0):
+    """
+    S-shaped easing from s0 at frame 0 to 1.0 at focus_idx.
+    steepness >= 1.0 (1.0 = linear; higher = steeper S in the middle).
+    """
+    if fi >= focus_idx or focus_idx <= 0:
+        return 1.0
+
+    # progress in [0,1]
+    t = fi / float(focus_idx)
+    t = max(0.0, min(1.0, t))
+
+    a = max(1.0, float(steepness))  # ensure S-shape
+    if t == 0.0:
+        eased = 0.0
+    elif t == 1.0:
+        eased = 1.0
+    else:
+        ta = t ** a
+        ua = (1.0 - t) ** a
+        eased = ta / (ta + ua)  # symmetric S, exact endpoints
+
     return 1.0 + (s0 - 1.0) * (1.0 - eased)
 
 def apply_zoom_to_box(box: List[int], fx: float, fy: float, s: float, W: int, H: int) -> List[int]:
@@ -272,7 +298,7 @@ def main():
     # render
     for fi in range(total_frames):
         t_offset = (fi - focus_idx) / float(args.fps)
-        s = zoom_factor(fi, focus_idx, s0, args.zoom_gamma)
+        s = zoom_factor_S(fi, focus_idx, s0, args.zoom_gamma)
 
         canvas = np.zeros((H, W, 3), dtype=np.uint8)
         skipped = 0
