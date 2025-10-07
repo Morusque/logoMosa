@@ -266,6 +266,7 @@ def main():
     ap.add_argument("--height", type=int, default=1080)
     ap.add_argument("--frames_dir", required=True)
     ap.add_argument("--video_out", required=True)
+    ap.add_argument("--start_frame", type=int, default=0)
     args = ap.parse_args()
 
     # normalize + ensure dirs
@@ -283,6 +284,7 @@ def main():
     W, H = int(args.width), int(args.height)
     focus_idx = int(args.pre_roll)
     total_frames = int(args.pre_roll) + 1 + int(args.post_roll)
+    start_frame = args.start_frame;
 
     # focus center & starting scale
     fx, fy, s0 = compute_focus_params(entries, args.focus_tile, W, H)
@@ -296,7 +298,7 @@ def main():
         return vmeta[v]
 
     # render
-    for fi in range(total_frames):
+    for fi in range(start_frame, total_frames):
         t_offset = (fi - focus_idx) / float(args.fps)
         s = zoom_factor_S(fi, focus_idx, s0, args.zoom_gamma)
 
