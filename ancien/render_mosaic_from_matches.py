@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# ce script vit dans ancien/ : config.py est un cran au-dessus
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
 import argparse, json, os, subprocess, tempfile
 from typing import Optional, List, Tuple, Dict
 import numpy as np
@@ -256,18 +260,34 @@ def draw_grid(canvas, entries, Px, Py, s, W, H):# for debug
 # ---------- main ----------
 def main():
     ap = argparse.ArgumentParser(description="Render full frame sequence with unzoom; focus timing exact; white grid overlay.")
-    ap.add_argument("--matches", required=True)
-    ap.add_argument("--fps", type=int, default=20)
+    # Chemins et geometrie absents = ceux de config.txt.
+    ap.add_argument("--matches", default=None)
+    ap.add_argument("--fps", type=int, default=None)
     ap.add_argument("--pre_roll", type=int, default=80)
     ap.add_argument("--post_roll", type=int, default=20)
     ap.add_argument("--focus_tile", type=int, default=0)
+    # NB : passe en 'steepness' a zoom_factor_S, ce n'est plus un gamma.
     ap.add_argument("--zoom_gamma", type=float, default=0.7)
-    ap.add_argument("--width", type=int, default=1920)
-    ap.add_argument("--height", type=int, default=1080)
-    ap.add_argument("--frames_dir", required=True)
-    ap.add_argument("--video_out", required=True)
+    ap.add_argument("--width", type=int, default=None)
+    ap.add_argument("--height", type=int, default=None)
+    ap.add_argument("--frames_dir", default=None)
+    ap.add_argument("--video_out", default=None,
+                    help="ne code AUCUNE video : sert a placer l'apercu du plan de focus")
     ap.add_argument("--start_frame", type=int, default=0)
     args = ap.parse_args()
+
+    from config import CFG
+    corpus = CFG.path("corpus")
+    args.matches = args.matches or CFG.path("matches")
+    args.fps     = args.fps or int(CFG.get("fps", "20"))
+    args.width   = args.width or int(CFG.get("width", "1920"))
+    args.height  = args.height or int(CFG.get("height", "1080"))
+    out_dir = CFG.path("out_dir", doit_exister=False)
+    # un dossier d'images par tuile de focus : deux rendus ne s'ecrasent plus
+    args.frames_dir = args.frames_dir or os.path.join(
+        out_dir, "frames_tile%04d" % args.focus_tile)
+    args.video_out = args.video_out or os.path.join(
+        out_dir, "mosaic_tile%04d.jpg" % args.focus_tile)
 
     # normalize + ensure dirs
     args.matches    = normp(args.matches)
@@ -314,7 +334,10 @@ def main():
             box_zoomed = apply_zoom_to_box_identity_at_1(box, Px, Py, s)
 
             m   = e.get("match", {})
-            vid = m.get("video")
+            # 'rel' (relatif au corpus) l'emporte sur 'video' (absolu, fige au
+            # moment de la recherche) : c'est ce qui rend le rendu insensible a
+            # la lettre sur laquelle le disque est monte.
+            vid = os.path.join(corpus, m["rel"]) if m.get("rel") else m.get("video")
             t0  = m.get("t")
             idx = m.get("frame_idx")
             var = m.get("variant", "center")
@@ -365,7 +388,9 @@ def main():
         Image.fromarray(canvas).save(out_png)
 
         if fi == focus_idx:
-            preview_jpg = os.path.join(preview_dir, "mosaic_from_matches.jpg")
+            # nom derive de --video_out : deux tuiles de focus ne s'ecrasent plus
+            base = os.path.splitext(os.path.basename(args.video_out))[0] or "mosaic_from_matches"
+            preview_jpg = os.path.join(preview_dir, base + ".jpg")
             ensure_dir(os.path.dirname(preview_jpg))
             Image.fromarray(canvas).save(preview_jpg, quality=95)
 

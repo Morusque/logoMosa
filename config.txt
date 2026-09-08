@@ -1,0 +1,34 @@
+# Configuration du projet logoMosa.
+#
+#   cle = valeur          '#' commente jusqu'a la fin de la ligne
+#   cle = a | b | c       plusieurs chemins : LE PREMIER QUI EXISTE GAGNE
+#
+# Le disque du corpus n'est pas toujours monte sur la meme lettre : liste ici
+# toutes les lettres possibles, separees par '|', et plus rien n'est a editer
+# quand elle change. Un chemin relatif part du dossier de ce fichier.
+#
+# Pour verifier ce que les scripts voient :   python config.py
+
+
+# --- le corpus de films (le seul reglage qui bouge vraiment)
+corpus      = F:/Kino/montpellier | G:/Kino/montpellier | D:/Kino/montpellier | E:/Kino/montpellier | G:/Kino/mtp
+
+# --- l'index de visionnages01 : planches contact, index.jsonl, audio
+#     sert de reservoir de vignettes pour la recherche de tuiles
+visionnages = F:/Kino/docs/visionnages01 | G:/Kino/docs/visionnages01 | D:/Kino/docs/visionnages01
+
+# --- les fichiers du projet (relatifs a ce dossier, ils bougent avec lui)
+target      = logo.png
+out_dir     = out_mosaic
+matches     = out_mosaic/matches_exhaustif.json
+sfx         = montages/sfx/timed_ending_sfx_alone_01.wav
+
+# --- geometrie et rendu
+grid        = 27 27
+width       = 1920
+height      = 1080
+fps         = 20
+
+# --- rendu : duree du dezoom (en images) avant et apres la revelation
+pre_roll    = 100
+post_roll   = 2

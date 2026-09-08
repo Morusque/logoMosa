@@ -11,17 +11,19 @@ int lastHit = -1;
 
 void setup() {
   size(1440, 810);
-  im = loadImage("preview.png");            // put in data/ or same folder
+  // la mosaique courante, reconstituee a partir des vraies images
+  im = loadImage("../out_mosaic/matches_exhaustif_reel.jpg");
+  if (im == null) im = loadImage("preview.png");     // repli : celle de 2025
   if (im == null) {
-    println("[warn] preview.png not found → showing gray background.");
+    println("[warn] aucun apercu trouve -> fond gris.");
   }
-  matches = loadJSONArray("../out_mosaic/matches_pass.json");
+  matches = loadJSONArray("../out_mosaic/matches_exhaustif.json");
   if (matches == null) {
     // fallback: also try local data folder
-    matches = loadJSONArray("matches_pass.json");
+    matches = loadJSONArray("../out_mosaic/matches_pass.json");
   }
   if (matches == null) {
-    throw new RuntimeException("Could not load matches_pass.json");
+    throw new RuntimeException("matches introuvable : lance chercher_tuiles.py");
   }
 
   // Detect the source canvas size from the max 'box' right/bottom

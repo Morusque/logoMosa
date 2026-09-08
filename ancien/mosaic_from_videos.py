@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# ce script vit dans ancien/ : config.py est un cran au-dessus
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
 import argparse, json, os, sys, random
 from collections import defaultdict
 from typing import List, Dict, Any, Optional
@@ -178,10 +182,12 @@ def normalize_resume_entry(raw: dict) -> dict:
 
 def main():
     ap = argparse.ArgumentParser(description="Iterative video mosaic builder (with resume).")
-    ap.add_argument("--videos", required=True)
-    ap.add_argument("--target", required=True)
-    ap.add_argument("--out_dir", required=True)
-    ap.add_argument("--grid", nargs=2, type=int, required=True)
+    # Chemins absents = ceux de config.txt. Le disque du corpus n'est pas
+    # toujours monte sur la meme lettre : la config en essaie plusieurs.
+    ap.add_argument("--videos", default=None)
+    ap.add_argument("--target", default=None)
+    ap.add_argument("--out_dir", default=None)
+    ap.add_argument("--grid", nargs=2, type=int, default=None)
     ap.add_argument("--tile_sample", type=int, default=8)
     ap.add_argument("--resume", type=str, default="")
     ap.add_argument("--infinite", action="store_true")
@@ -193,6 +199,15 @@ def main():
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument("--rebuild_preview_only", action="store_true")
     args = ap.parse_args()
+
+    from config import CFG
+    args.videos = args.videos or CFG.path("corpus")
+    args.target = args.target or CFG.path("target")
+    args.out_dir = args.out_dir or CFG.path("out_dir", doit_exister=False)
+    args.grid = args.grid or CFG.ints("grid", "27 27")
+    print("videos : %s" % args.videos)
+    print("target : %s" % args.target)
+    print("out    : %s" % args.out_dir)
 
     os.makedirs(args.out_dir, exist_ok=True)
     random.seed()
